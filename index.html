@@ -1,93 +1,201 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Kids English Game</title>
-<style>
-body{
-    font-family: Arial;
-    text-align:center;
-    background-color:#FFF8DC;
-}
-h1{
-    color:#FF6B6B;
-}
-.word-btn{
-    font-size:40px;
-    padding:30px;
-    margin:20px;
-    border-radius:20px;
-    border:none;
-    background-color:#4ECDC4;
-    color:white;
-    cursor:pointer;
-}
-.word-btn:hover{
-    background-color:#1A535C;
-}
-#randomBtn{
-    font-size:30px;
-    padding:20px;
-    background-color:#FF9F1C;
-    border:none;
-    border-radius:15px;
-    color:white;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Kids English Game</title>
+  <style>
+    body{
+      font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      text-align:center;
+      background:#FFF8DC;
+      margin:0;
+      padding:24px 12px;
+    }
+    h1{ color:#FF6B6B; margin:8px 0 6px; }
+    .tip{ font-size:20px; margin:6px 0 18px; }
+    .card{
+      max-width:780px;
+      margin:0 auto;
+      background:#fff;
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    .wordBox{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background:#4ECDC4;
+      color:#fff;
+      border-radius:22px;
+      padding:22px 14px;
+      margin:10px auto 14px;
+      width:min(520px, 92vw);
+    }
+    .emoji{ font-size:54px; line-height:1; }
+    .en{ font-size:46px; font-weight:700; margin:10px 0 4px; }
+    .cn{ font-size:24px; opacity:.95; }
+    .btnRow{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin:10px 0 4px;
+    }
+    button{
+      border:none;
+      border-radius:16px;
+      cursor:pointer;
+      padding:14px 18px;
+      font-size:22px;
+    }
+    .btnSpeak{ background:#1A535C; color:#fff; }
+    .btnNext{ background:#FF9F1C; color:#fff; }
+    .options{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      max-width:520px;
+      margin:12px auto 4px;
+    }
+    .opt{
+      background:#F2F6FF;
+      border:2px solid transparent;
+      border-radius:16px;
+      padding:16px 14px;
+      font-size:26px;
+    }
+    .opt:hover{ border-color:#BBD0FF; }
+    .msg{
+      min-height:36px;
+      font-size:26px;
+      font-weight:700;
+      margin:12px 0 2px;
+    }
+    .ok{ color:#17a34a; }
+    .bad{ color:#dc2626; }
+    .small{ font-size:16px; opacity:.75; margin-top:10px; }
+  </style>
 </head>
-
 <body>
 
-<h1>🌈 Learn English 🌈</h1>
-<p style="font-size:25px;">Click the picture to hear the word!</p>
+  <h1>🌈 Learn English 🌈</h1>
+  <div class="tip">听发音，看图，选择正确的中文意思！</div>
 
-<div id="gameArea"></div>
+  <div class="card">
+    <div class="wordBox">
+      <div class="emoji" id="emoji">🍎</div>
+      <div class="en" id="enWord">Apple</div>
+      <div class="cn" id="cnHint">（请选择正确中文）</div>
+    </div>
 
-<br>
-<button id="randomBtn" onclick="randomWord()">🎲 Random Word</button>
+    <div class="btnRow">
+      <button class="btnSpeak" onclick="speakCurrent()">🔊 听发音</button>
+      <button class="btnNext" onclick="nextQuestion()">➡️ 下一题</button>
+    </div>
+
+    <div class="options" id="options"></div>
+
+    <div class="msg" id="msg"></div>
+    <div class="small">小提示：如果没有声音，请检查浏览器是否允许播放声音。</div>
+  </div>
 
 <script>
+  // 单词库（你可以继续往里加）
+  const words = [
+    { en:"Apple",  cn:"苹果",  emoji:"🍎" },
+    { en:"Dog",    cn:"狗",    emoji:"🐶" },
+    { en:"Cat",    cn:"猫",    emoji:"🐱" },
+    { en:"Car",    cn:"汽车",  emoji:"🚗" },
+    { en:"Banana", cn:"香蕉",  emoji:"🍌" },
+    { en:"Ball",   cn:"球",    emoji:"⚽" },
+    { en:"Sun",    cn:"太阳",  emoji:"☀️" },
+    { en:"Fish",   cn:"鱼",    emoji:"🐟" },
+    { en:"Milk",   cn:"牛奶",  emoji:"🥛" },
+    { en:"Bread",  cn:"面包",  emoji:"🍞" }
+  ];
 
-const words = [
-    {word:"Apple", emoji:"🍎"},
-    {word:"Dog", emoji:"🐶"},
-    {word:"Cat", emoji:"🐱"},
-    {word:"Car", emoji:"🚗"},
-    {word:"Banana", emoji:"🍌"},
-    {word:"Ball", emoji:"⚽"},
-    {word:"Sun", emoji:"☀️"},
-    {word:"Fish", emoji:"🐟"}
-];
+  let current = null;
 
-function speak(text){
-    let speech = new SpeechSynthesisUtterance(text);
-    speech.lang = "en-US";
-    speech.rate = 0.8; 
-    speech.pitch = 1;
-    window.speechSynthesis.speak(speech);
-}
+  function speak(text){
+    // 兼容性：部分手机需要先点一次按钮才允许发声
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 0.85;
+    u.pitch = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }
 
-function createButtons(){
-    let area = document.getElementById("gameArea");
-    words.forEach(item=>{
-        let btn = document.createElement("button");
-        btn.className="word-btn";
-        btn.innerHTML = item.emoji + "<br>" + item.word;
-        btn.onclick = ()=> speak(item.word);
-        area.appendChild(btn);
+  function speakCurrent(){
+    if(current) speak(current.en);
+  }
+
+  function shuffle(arr){
+    return arr.map(v=>({v, r:Math.random()}))
+              .sort((a,b)=>a.r-b.r)
+              .map(x=>x.v);
+  }
+
+  function pick3Options(correctCn){
+    // 取正确 + 2个随机错误
+    const other = words
+      .map(w=>w.cn)
+      .filter(cn=>cn !== correctCn);
+    const wrong2 = shuffle(other).slice(0,2);
+    return shuffle([correctCn, ...wrong2]);
+  }
+
+  function setMessage(type, text){
+    const msg = document.getElementById("msg");
+    msg.className = "msg " + (type === "ok" ? "ok" : type === "bad" ? "bad" : "");
+    msg.textContent = text || "";
+  }
+
+  function renderQuestion(){
+    document.getElementById("emoji").textContent = current.emoji;
+    document.getElementById("enWord").textContent = current.en;
+    document.getElementById("cnHint").textContent = "（请选择正确中文）";
+    setMessage("", "");
+
+    const opts = pick3Options(current.cn);
+    const box = document.getElementById("options");
+    box.innerHTML = "";
+
+    opts.forEach(cn=>{
+      const btn = document.createElement("button");
+      btn.className = "opt";
+      btn.textContent = cn;
+      btn.onclick = ()=> checkAnswer(cn);
+      box.appendChild(btn);
     });
-}
 
-function randomWord(){
-    let randomIndex = Math.floor(Math.random()*words.length);
-    speak(words[randomIndex].word);
-}
+    // 进入题目时自动读一次（更像游戏）
+    speakCurrent();
+  }
 
-createButtons();
+  function checkAnswer(selectedCn){
+    if(selectedCn === current.cn){
+      setMessage("ok", "✅ Correct! 真棒！");
+      // 答对后再读一次英文强化记忆
+      speakCurrent();
+      // 800ms 后自动下一题
+      setTimeout(nextQuestion, 800);
+    }else{
+      setMessage("bad", "❌ Try again! 再试一次～");
+    }
+  }
 
+  function nextQuestion(){
+    current = words[Math.floor(Math.random() * words.length)];
+    renderQuestion();
+  }
+
+  // 初始出题
+  nextQuestion();
 </script>
 
 </body>
-
 </html>
