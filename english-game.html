@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kids English Game</title>
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background-color:#FFF8DC;
+}
+h1{
+    color:#FF6B6B;
+}
+.word-btn{
+    font-size:40px;
+    padding:30px;
+    margin:20px;
+    border-radius:20px;
+    border:none;
+    background-color:#4ECDC4;
+    color:white;
+    cursor:pointer;
+}
+.word-btn:hover{
+    background-color:#1A535C;
+}
+#randomBtn{
+    font-size:30px;
+    padding:20px;
+    background-color:#FF9F1C;
+    border:none;
+    border-radius:15px;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌈 Learn English 🌈</h1>
+<p style="font-size:25px;">Click the picture to hear the word!</p>
+
+<div id="gameArea"></div>
+
+<br>
+<button id="randomBtn" onclick="randomWord()">🎲 Random Word</button>
+
+<script>
+
+const words = [
+    {word:"Apple", emoji:"🍎"},
+    {word:"Dog", emoji:"🐶"},
+    {word:"Cat", emoji:"🐱"},
+    {word:"Car", emoji:"🚗"},
+    {word:"Banana", emoji:"🍌"},
+    {word:"Ball", emoji:"⚽"},
+    {word:"Sun", emoji:"☀️"},
+    {word:"Fish", emoji:"🐟"}
+];
+
+function speak(text){
+    let speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-US";
+    speech.rate = 0.8; 
+    speech.pitch = 1;
+    window.speechSynthesis.speak(speech);
+}
+
+function createButtons(){
+    let area = document.getElementById("gameArea");
+    words.forEach(item=>{
+        let btn = document.createElement("button");
+        btn.className="word-btn";
+        btn.innerHTML = item.emoji + "<br>" + item.word;
+        btn.onclick = ()=> speak(item.word);
+        area.appendChild(btn);
+    });
+}
+
+function randomWord(){
+    let randomIndex = Math.floor(Math.random()*words.length);
+    speak(words[randomIndex].word);
+}
+
+createButtons();
+
+</script>
+
+</body>
+</html>
